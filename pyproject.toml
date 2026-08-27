@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "litearm-dsh"
+version = "0.1.0"
+description = "DeepSeek Harness plugin for LiteArm robotic arm control — LLM-driven embodied AI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "LicenseRef-Proprietary" }
+authors = [{ name = "luochun" }]
+keywords = ["robotics", "robot-arm", "litearm", "deepseek-harness", "embodied-ai"]
+dependencies = [
+    "litearm-python",
+    "deepseek-harness-sdk",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-v"
