@@ -161,3 +161,33 @@ def stop_recording() -> str:
         return f"停止录制: {result}"
     except Exception as e:
         return f"stop_recording 失败: {type(e).__name__}: {e}"
+
+
+def discard_recording() -> str:
+    """丢弃当前录制中的轨迹。"""
+    try:
+        arm = get_arm()
+        result = arm.discard_recording()
+        return f"丢弃录制: {result}"
+    except Exception as e:
+        return f"discard_recording 失败: {type(e).__name__}: {e}"
+
+
+def get_recording_state() -> str:
+    """查询当前录制状态。"""
+    try:
+        arm = get_arm()
+        result = arm.get_recording_state()
+        return f"录制状态: {result}"
+    except Exception as e:
+        return f"get_recording_state 失败: {type(e).__name__}: {e}"
+
+
+def get_playback_state() -> str:
+    """查询当前回放状态。"""
+    try:
+        arm = get_arm()
+        result = arm.get_playback_state()
+        return f"回放状态: {result}"
+    except Exception as e:
+        return f"get_playback_state 失败: {type(e).__name__}: {e}"

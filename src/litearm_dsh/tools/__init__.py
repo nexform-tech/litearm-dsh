@@ -35,6 +35,9 @@ from .record import (
     manage_trajectories,
     start_recording,
     stop_recording,
+    discard_recording,
+    get_recording_state,
+    get_playback_state,
 )
 from .configure import (
     set_arm_params,
@@ -87,6 +90,9 @@ TOOLS = {
     "manage_trajectories": manage_trajectories,
     "start_recording": start_recording,
     "stop_recording": stop_recording,
+    "discard_recording": discard_recording,
+    "get_recording_state": get_recording_state,
+    "get_playback_state": get_playback_state,
     # Configure
     "set_arm_params": set_arm_params,
     "set_limits": set_limits,
@@ -122,7 +128,8 @@ TOOL_CATEGORIES = {
     ],
     "轨迹": [
         "record_trajectory", "replay_trajectory", "manage_trajectories",
-        "start_recording", "stop_recording",
+        "start_recording", "stop_recording", "discard_recording",
+        "get_recording_state", "get_playback_state",
     ],
     "配置": [
         "set_arm_params", "set_limits", "set_end_effector",

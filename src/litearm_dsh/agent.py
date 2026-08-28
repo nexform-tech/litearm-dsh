@@ -10,14 +10,10 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from .arm_handle import ArmHandle
 from .tools import TOOLS, TOOL_CATEGORIES
-from .tools import (
-    get_arm_state,
-    emergency_stop,
-)
 
 # ── System prompt ───────────────────────────────────────────────────────────────
 
@@ -161,16 +157,14 @@ class LiteArmAgent:
         """Run a single prompt against the agent. Returns the LLM response text.
 
         This is a programmatic API — use for automation and evaluation.
+        Tries DeepSeek Harness SDK first; falls back to direct API on any failure.
         """
-        from deepseek_harness import DeepSeekHarness
-
-        # We use the low-level API: register tools and run a single turn
-        # Since DeepSeek Harness Python SDK is still evolving, we provide
-        # both a Harness-native path and a fallback direct API path.
-
         try:
+            import deepseek_harness  # noqa: F401
             return self._run_via_harness(prompt)
-        except ImportError:
+        except (ImportError, Exception) as e:
+            if self.verbose:
+                print(f"  [info] Harness SDK 不可用 ({e})，回退到直接 API 调用", file=sys.stderr)
             return self._run_via_direct_api(prompt)
 
     def _run_via_harness(self, prompt: str) -> str:
@@ -273,11 +267,44 @@ class LiteArmAgent:
         """Build OpenAI-compatible tool definitions from our tool functions."""
         import inspect
 
+        def _resolve_type(annotation: Any) -> str:
+            """Resolve a Python type annotation to JSON Schema type string."""
+            if annotation is inspect.Parameter.empty:
+                return "string"
+            # Handle Optional[X] (Union[X, None]) and other Union types
+            origin = getattr(annotation, "__origin__", None)
+            args = getattr(annotation, "__args__", ())
+            if origin is Union or origin is getattr(Union, "__origin__", None):
+                # Pick the first non-NoneType arg
+                for arg in args:
+                    if arg is not type(None):  # noqa: E721
+                        return _resolve_type(arg)
+                return "string"
+            # Handle List[X]
+            if origin is list or origin is List:
+                return "array"
+            # Handle Dict
+            if origin is dict or origin is Dict:
+                return "object"
+            # Direct type comparison
+            if annotation is float or annotation is int:
+                return "number"
+            if annotation is bool:
+                return "boolean"
+            if annotation is str:
+                return "string"
+            if annotation is dict:
+                return "object"
+            if annotation is list:
+                return "array"
+            if annotation is Any:
+                return "string"
+            return "string"
+
         tools = []
         for name, fn in TOOLS.items():
             sig = inspect.signature(fn)
             doc = fn.__doc__ or ""
-            # Extract first paragraph as description
             desc_lines = doc.strip().split("\n\n")
             description = desc_lines[0] if desc_lines else name
 
@@ -286,30 +313,9 @@ class LiteArmAgent:
             for pname, param in sig.parameters.items():
                 if pname in ("self", "cls"):
                     continue
-                prop = {}
-                if param.annotation is not inspect.Parameter.empty:
-                    ann = param.annotation
-                    # Handle Optional[X]
-                    origin = getattr(ann, "__origin__", None)
-                    if origin is list or origin is List:
-                        prop["type"] = "array"
-                        prop["items"] = {"type": "number"}
-                    elif ann is float or ann is Optional[float]:
-                        prop["type"] = "number"
-                    elif ann is int or ann is Optional[int]:
-                        prop["type"] = "integer"
-                    elif ann is str or ann is Optional[str]:
-                        prop["type"] = "string"
-                    elif ann is bool or ann is Optional[bool]:
-                        prop["type"] = "boolean"
-                    elif ann is dict or ann is Dict:
-                        prop["type"] = "object"
-                    elif origin is list or origin is List:
-                        prop["type"] = "array"
-                    else:
-                        prop["type"] = "string"
-                else:
-                    prop["type"] = "string"
+                prop = {"type": _resolve_type(param.annotation)}
+                if prop["type"] == "array":
+                    prop["items"] = {"type": "number"}
 
                 # Extract param description from docstring
                 for line in doc.split("\n"):

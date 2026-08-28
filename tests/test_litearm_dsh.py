@@ -181,7 +181,7 @@ class TestToolRegistry:
     def test_all_tools_registered(self):
         from litearm_dsh.tools import TOOLS, TOOL_CATEGORIES
 
-        assert len(TOOLS) == 39
+        assert len(TOOLS) == 42
         # Check all categories are non-empty
         for cat, names in TOOL_CATEGORIES.items():
             assert len(names) > 0, f"Category {cat} is empty"

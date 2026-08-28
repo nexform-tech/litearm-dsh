@@ -11,8 +11,6 @@ from typing import Any, Dict, Optional
 
 import litearm
 
-from .safety_gate import SafetyGate
-
 _LOCK = threading.Lock()
 _ARM: Optional[litearm.Arm] = None
 _ENDPOINT: str = "tcp/127.0.0.1:7447"
